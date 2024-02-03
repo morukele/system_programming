@@ -34,7 +34,7 @@ impl From<Q7> for f32 {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     #[test]
     fn out_of_bounds() {
