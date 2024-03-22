@@ -1,5 +1,5 @@
-use system_programming::particles;
+use system_programming::particles_simulator;
 
 fn main() {
-    particles::run_simulation();
+    particles_simulator::run_simulation();
 }
