@@ -40,7 +40,7 @@ impl CPU {
             let c = ((opcode & 0xF000) >> 12) as u8;
             let x = ((opcode & 0x0F00) >> 8) as u8;
             let y = ((opcode & 0x00F0) >> 4) as u8;
-            let d = ((opcode & 0x000F) >> 0) as u8;
+            let d = (opcode & 0x000F) as u8;
 
             // Memory address of the function
             let nnn = opcode & 0x0FFF;
