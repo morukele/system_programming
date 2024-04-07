@@ -6,7 +6,7 @@ use std::{
 pub fn run_sever(ip_address: &str, port: i8) {
     // Connects to a TCP server running on localhost:8080
     let address = format!("{}:{}", ip_address, port);
-    let stream = TcpStream::connect(&address).expect("unable to connect to address");
+    let _stream = TcpStream::connect(&address).expect("unable to connect to address");
     let listener = TcpListener::bind(&address).expect("unable to bind to address");
 
     for stream in listener.incoming() {

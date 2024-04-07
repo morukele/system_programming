@@ -102,7 +102,7 @@ impl World {
 
     pub fn add_shapes(&mut self, n: i32) {
         for _ in 0..n.abs() {
-            let particle = Particle::new(&self);
+            let particle = Particle::new(self);
             let boxed_particle = Box::new(particle);
             self.particles.push(boxed_particle);
         }
@@ -110,22 +110,16 @@ impl World {
 
     pub fn remove_shapes(&mut self, n: i32) {
         for _ in 0..n.abs() {
-            let mut to_delete = None;
+            let mut particle_iter = self.particles.iter().enumerate();
 
-            let particle_iter = self.particles.iter().enumerate();
-
-            for (i, particle) in particle_iter {
+            if let Some((i, particle)) = particle_iter.next() {
                 if particle.color[3] < 0.02 {
-                    to_delete = Some(i);
+                    self.particles.remove(i);
+                    break;
+                } else {
+                    self.particles.remove(0);
                 }
-                break;
             }
-
-            if let Some(i) = to_delete {
-                self.particles.remove(i);
-            } else {
-                self.particles.remove(0);
-            };
         }
     }
 
