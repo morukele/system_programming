@@ -1,21 +1,29 @@
-static GLOBAL: i32 = 1000;
+use std::{env, fs::File, io::prelude::*};
 
-fn noop() -> *const i32 {
-    let noop_local = 12345;
-    &noop_local as *const i32
-}
+const BYTES_PER_LINE: usize = 16;
 
-fn main() {
-    let local_str = "a";
-    let local_int = 123;
-    let boxed_str = Box::new('b');
-    let boxed_int = Box::new(789);
-    let fn_int = noop();
+fn main() -> std::io::Result<()> {
+    let arg1 = env::args().nth(1);
 
-    println!("GLOBAL:      {:p}", &GLOBAL as *const i32);
-    println!("local_str:   {:p}", local_str as *const str);
-    println!("local_int:   {:p}", &local_int as *const i32);
-    println!("boxed_int:   {:p}", Box::into_raw(boxed_int));
-    println!("boxed_str:   {:p}", Box::into_raw(boxed_str));
-    println!("fn_int:      {:p}", fn_int);
+    let fname = arg1.expect("usage: fview FILENAME");
+
+    let mut f = File::open(fname).expect("Unable to open file.");
+    let mut pos = 0;
+    let mut buffer = [0; BYTES_PER_LINE];
+
+    while f.read_exact(&mut buffer).is_ok() {
+        print!("[Ox{:08x}] ", pos);
+        for byte in &buffer {
+            match *byte {
+                0x00 => print!(".   "),
+                0xff => print!("##  "),
+                _ => print!("{:02x} ", byte),
+            }
+        }
+
+        println!();
+        pos += BYTES_PER_LINE;
+    }
+
+    Ok(())
 }
