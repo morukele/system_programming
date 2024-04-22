@@ -1,29 +1,49 @@
-use std::{env, fs::File, io::prelude::*};
+use system_programming::ActionKV;
 
-const BYTES_PER_LINE: usize = 16;
+#[cfg(target_os = "windows")]
+const USAGE: &str = "
+Usage:
+    akv_mem.exe FILE get KEY
+    akv_mem.exe FILE delete KEY
+    akv_mem.exe FILE insert KEY VALUE
+    akv_mem.exe FILE update KEY VALUE
+";
 
-fn main() -> std::io::Result<()> {
-    let arg1 = env::args().nth(1);
+#[cfg(not(target_os = "windows"))]
+const USAGE: &str = "
+Usage:
+    akv_mem FILE get KEY
+    akv_mem FILE delete KEY
+    akv_mem FILE insert KEY VALUE
+    akv_mem FILE update KEY VALUE
+";
 
-    let fname = arg1.expect("usage: fview FILENAME");
+fn main() {
+    let args: Vec<String> = std::env::args().collect();
 
-    let mut f = File::open(fname).expect("Unable to open file.");
-    let mut pos = 0;
-    let mut buffer = [0; BYTES_PER_LINE];
+    let fname = args.get(1).expect(USAGE);
+    let action = args.get(2).expect(USAGE).as_ref();
+    let key = args.get(3).expect(USAGE).as_ref();
+    let maybe_value = args.get(4);
 
-    while f.read_exact(&mut buffer).is_ok() {
-        print!("[Ox{:08x}] ", pos);
-        for byte in &buffer {
-            match *byte {
-                0x00 => print!(".   "),
-                0xff => print!("##  "),
-                _ => print!("{:02x} ", byte),
-            }
+    let path = std::path::Path::new(&fname);
+    let mut store = ActionKV::open(path).expect("unable to open file");
+    store.load().expect("unable to load data");
+
+    match action {
+        "get" => match store.get(key).unwrap() {
+            Some(value) => println!("{:?}", value),
+            None => eprintln!("{:?} not found", key),
+        },
+        "delete" => store.delete(key).unwrap(),
+        "insert" => {
+            let value = maybe_value.expect(USAGE).as_ref();
+            store.insert(key, value).unwrap()
         }
-
-        println!();
-        pos += BYTES_PER_LINE;
+        "update" => {
+            let value = maybe_value.expect(USAGE).as_ref();
+            store.update(key, value).unwrap();
+        }
+        _ => eprintln!("{}", &USAGE),
     }
-
-    Ok(())
 }
