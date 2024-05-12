@@ -28,7 +28,6 @@ impl ActionKV {
     pub fn open(path: &Path) -> io::Result<Self> {
         let f = OpenOptions::new()
             .read(true)
-            .write(true)
             .create(true)
             .append(true)
             .open(path)?;
