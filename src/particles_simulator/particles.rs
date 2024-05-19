@@ -16,7 +16,7 @@ where
     F: FnOnce(),
 {
     thread_local! {
-        static GUARD: Cell<bool> = Cell::new(false);
+        static GUARD: Cell<bool> = const { Cell::new(false) };
     }
 
     GUARD.with(|guard| {

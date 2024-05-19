@@ -1,3 +1,13 @@
+use system_programming::networking;
+
 fn main() {
-    system_programming::app::run();
+    let res = networking::http::request();
+    match res {
+        Ok(_) => {
+            println!("Request terminated normally")
+        }
+        Err(err) => {
+            println!("{}", err)
+        }
+    }
 }
