@@ -20,7 +20,7 @@ pub fn resolve() {
         .get_matches();
 
     let domain_name_raw = app.value_of("domain-name").unwrap();
-    let domain_name = Name::from_ascii(&domain_name_raw).unwrap();
+    let domain_name = Name::from_ascii(domain_name_raw).unwrap();
 
     let dns_server_raw = app.value_of("dns-server").unwrap();
     let dns_server: SocketAddr = format!("{}:53", dns_server_raw)
@@ -59,7 +59,7 @@ pub fn resolve() {
         if answer.record_type() == RecordType::A {
             let resource = answer.rdata();
             let ip = resource.to_ip_addr().expect("invalid IP address received");
-            println!("{}", ip.to_string());
+            println!("{}", ip);
         }
     }
 }

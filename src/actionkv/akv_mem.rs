@@ -100,7 +100,7 @@ impl ActionKV {
                 found = Some((position, kv.value));
             }
 
-            // Loop till the end of the file incase the key is overwritten
+            // Loop till the end of the file in case the key is overwritten
         }
 
         Ok(found)
