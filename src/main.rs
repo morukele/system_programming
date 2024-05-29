@@ -1,7 +1,5 @@
-use std::fs::File;
-use std::net::Ipv6Addr;
-use system_programming::{MacAddress, UpstreamError};
+use system_programming::mget;
 
 fn main() {
-    let mac = MacAddress::new();
+    mget::run();
 }

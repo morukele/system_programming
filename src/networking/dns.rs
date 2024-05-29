@@ -1,65 +1,75 @@
+use std::error::Error;
 use std::net::{SocketAddr, UdpSocket};
 use std::time::Duration;
 
-use clap::{App, Arg};
+use crate::DnsError;
 use rand;
 use trust_dns::op::{Message, MessageType, OpCode, Query};
 use trust_dns::rr::domain::Name;
 use trust_dns::rr::record_type::RecordType;
 use trust_dns::serialize::binary::*;
 
-pub fn resolve() {
-    let app = App::new("resolve")
-        .about("A simple to use DNS resolver")
-        .arg(
-            Arg::with_name("dns-server")
-                .short("s")
-                .default_value("1.1.1.1"),
-        )
-        .arg(Arg::with_name("domain-name").required(true))
-        .get_matches();
+fn message_id() -> u16 {
+    let candidate = rand::random();
+    if candidate == 0 {
+        return message_id();
+    }
+    candidate
+}
 
-    let domain_name_raw = app.value_of("domain-name").unwrap();
-    let domain_name = Name::from_ascii(domain_name_raw).unwrap();
-
-    let dns_server_raw = app.value_of("dns-server").unwrap();
-    let dns_server: SocketAddr = format!("{}:53", dns_server_raw)
+pub fn resolve(
+    dns_server_address: &str,
+    domain_name: &str,
+) -> Result<Option<std::net::IpAddr>, Box<dyn Error>> {
+    let domain_name = Name::from_ascii(domain_name).map_err(DnsError::ParseDomainName)?;
+    let dns_server: SocketAddr = format!("{}:53", dns_server_address)
         .parse()
-        .expect("invalid address");
+        .map_err(DnsError::ParseDnsServerAddress)?;
 
-    let mut request_as_bytes: Vec<u8> = Vec::with_capacity(512);
-    let mut response_as_bytes: Vec<u8> = vec![0; 512];
+    let mut request_buffer: Vec<u8> = Vec::with_capacity(64);
+    let mut response_buffer = vec![0; 512];
 
-    let mut msg = Message::new();
-    msg.set_id(rand::random::<u16>())
+    let mut request = Message::new();
+    request.add_query(Query::query(domain_name, RecordType::A));
+
+    request
+        .set_id(message_id())
         .set_message_type(MessageType::Query)
-        .add_query(Query::query(domain_name, RecordType::A))
         .set_op_code(OpCode::Query)
         .set_recursion_desired(true);
 
-    let mut encoder = BinEncoder::new(&mut request_as_bytes);
-    msg.emit(&mut encoder).unwrap();
+    let localhost = UdpSocket::bind("0.0.0.0:0").map_err(DnsError::Network)?;
+    let timeout = Duration::from_secs(5);
+    localhost
+        .set_read_timeout(Some(timeout))
+        .map_err(DnsError::Network)?;
 
-    let localhost = UdpSocket::bind("0.0.0.0:0").expect("cannot bind to local socket");
-    let timeout = Duration::from_secs(3);
-    localhost.set_read_timeout(Some(timeout)).unwrap();
-    localhost.set_nonblocking(false).unwrap();
+    let mut encoder = BinEncoder::new(&mut request_buffer);
+    request.emit(&mut encoder).map_err(DnsError::Encoding)?;
 
-    let _amt = localhost
-        .send_to(&request_as_bytes, dns_server)
-        .expect("socket misconfigured");
+    let _n_bytes_sent = localhost
+        .send_to(&request_buffer, dns_server)
+        .map_err(DnsError::Sending)?;
 
-    let (_amt, _remote) = localhost
-        .recv_from(&mut response_as_bytes)
-        .expect("timeout reached");
+    loop {
+        let (_b_bytes_recv, remote_port) = localhost
+            .recv_from(&mut response_buffer)
+            .map_err(DnsError::Sending)?;
 
-    let dns_message = Message::from_vec(&response_as_bytes).expect("unable to parse response");
-
-    for answer in dns_message.answers() {
-        if answer.record_type() == RecordType::A {
-            let resource = answer.rdata();
-            let ip = resource.to_ip_addr().expect("invalid IP address received");
-            println!("{}", ip);
+        if remote_port == dns_server {
+            break;
         }
     }
+
+    let response = Message::from_vec(&response_buffer).map_err(DnsError::Decoding)?;
+
+    for answer in response.answers() {
+        if answer.record_type() == RecordType::A {
+            let resource = answer.rdata();
+            let server_ip = resource.to_ip_addr().expect("invalid IP address received");
+            return Ok(Some(server_ip));
+        }
+    }
+
+    Ok(None)
 }

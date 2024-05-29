@@ -1,4 +1,5 @@
 use rand::RngCore;
+use smoltcp::wire;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Default)]
@@ -19,15 +20,14 @@ impl MacAddress {
     pub fn new() -> MacAddress {
         let mut octlets: [u8; 6] = [0; 6];
         rand::thread_rng().fill_bytes(&mut octlets);
-        octlets[0] = 0b_0000_0011;
-        MacAddress(octlets)
+        octlets[0] |= 0b_0000_0010;
+        octlets[0] &= 0b_1111_1110;
+        MacAddress { 0: octlets }
     }
+}
 
-    pub fn is_local(&self) -> bool {
-        (self.0[0] & 0b_0000_0010) == 0b_0000_0010
-    }
-
-    pub fn is_unicast(&self) -> bool {
-        (self.0[0] & 0b_0000_0001) == 0b_0000_0001
+impl Into<wire::EthernetAddress> for MacAddress {
+    fn into(self) -> wire::EthernetAddress {
+        wire::EthernetAddress { 0: self.0 }
     }
 }
