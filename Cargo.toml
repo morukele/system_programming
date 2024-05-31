@@ -23,3 +23,11 @@ trust-dns = { version = "0.16", default-features = false }
 url = "2"
 smoltcp = { version = "0.6", features = ["proto-igmp", "proto-ipv4", "verbose", "log"] }
 chrono = "0.4.38"
+
+[target.'cfg(not(windows))'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+winapi = "0.2"
+kernel32-sys = "0.2"
+
