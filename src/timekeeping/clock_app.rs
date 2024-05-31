@@ -1,6 +1,6 @@
-use crate::Clock;
+use crate::{check_time, Clock};
+use chrono::{DateTime, Duration as ChronoDuration, Utc};
 use clap::{App, Arg};
-use chrono::DateTime;
 
 pub fn run() {
     let app = App::new("clock")
@@ -9,12 +9,12 @@ pub fn run() {
         .after_help(
             "Note: UNIX timestamps are parsed as whole \
             seconds since 1st January 1970 0:00:00 UTC. \
-            For more accuracy, use another format"
+            For more accuracy, use another format",
         )
         .arg(
             Arg::with_name("action")
                 .takes_value(true)
-                .possible_values(&["get", "set"])
+                .possible_values(&["get", "set", "check-ntp"])
                 .default_value("get"),
         )
         .arg(
@@ -44,13 +44,29 @@ pub fn run() {
             _ => unimplemented!(),
         };
 
-        let err_msg = format!(
-            "Unable to parse {} according to {}",
-            t_, std
-        );
+        let err_msg = format!("Unable to parse {} according to {}", t_, std);
         let t = parser(t_).expect(&err_msg);
 
         Clock::set(t);
+    } else if action == "check-ntp" {
+        let offset = check_time().unwrap() as isize;
+
+        let adjusted_ms_ = offset.signum() * offset.abs().min(200) / 5;
+        let adjusted_ms = ChronoDuration::milliseconds(adjusted_ms_ as i64);
+
+        let now: DateTime<Utc> = Utc::now() + adjusted_ms;
+
+        Clock::set(now);
+    }
+
+    // Error handling
+    let maybe_error = std::io::Error::last_os_error();
+    let os_error_code = &maybe_error.raw_os_error();
+
+    match os_error_code {
+        Some(0) => (),
+        Some(_) => eprintln!("Unable to set the time {:?}", maybe_error),
+        None => (),
     }
 
     let now = Clock::get();

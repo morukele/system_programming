@@ -1,4 +1,4 @@
-pub mod actionkv;
+// pub mod actionkv;
 pub mod chip8;
 mod errors;
 // pub mod networking;
@@ -9,7 +9,7 @@ pub mod tcp_server;
 pub mod timekeeping;
 
 // public re-exports
-pub use actionkv::*;
+// pub use actionkv::*;
 pub use chip8::*;
 pub use errors::*;
 // pub use networking::*;
