@@ -1,10 +1,16 @@
 use crate::Clock;
 use clap::{App, Arg};
+use chrono::DateTime;
 
 pub fn run() {
     let app = App::new("clock")
         .version("0.1")
         .about("Get and set the time")
+        .after_help(
+            "Note: UNIX timestamps are parsed as whole \
+            seconds since 1st January 1970 0:00:00 UTC. \
+            For more accuracy, use another format"
+        )
         .arg(
             Arg::with_name("action")
                 .takes_value(true)
@@ -30,7 +36,21 @@ pub fn run() {
     let std = args.value_of("std").unwrap();
 
     if action == "set" {
-        unimplemented!()
+        let t_ = args.value_of("datetime").unwrap();
+
+        let parser = match std {
+            "rfc2822" => DateTime::parse_from_rfc2822,
+            "rfc3339" => DateTime::parse_from_rfc3339,
+            _ => unimplemented!(),
+        };
+
+        let err_msg = format!(
+            "Unable to parse {} according to {}",
+            t_, std
+        );
+        let t = parser(t_).expect(&err_msg);
+
+        Clock::set(t);
     }
 
     let now = Clock::get();
