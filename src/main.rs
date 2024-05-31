@@ -1,5 +1,4 @@
-use system_programming::mget;
-
+use system_programming::clock_app;
 fn main() {
-    mget::run();
+    clock_app::run();
 }
