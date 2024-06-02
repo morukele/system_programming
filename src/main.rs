@@ -1,4 +1,5 @@
-use system_programming::clock_app;
+use system_programming::render_hex;
+
 fn main() {
-    clock_app::run();
+    render_hex::run()
 }

@@ -4,7 +4,6 @@ use chrono::{DateTime, Local, TimeZone, Timelike, Utc};
 use kernel32;
 #[cfg(not(windows))]
 use libc;
-use std::io::Error;
 use std::mem::zeroed;
 use std::net::UdpSocket;
 use std::time::Duration;
@@ -13,7 +12,7 @@ use winapi;
 
 const NTP_MESSAGE_LENGTH: usize = 48;
 const NTP_TO_UNIX_SECONDS: i64 = 2_208_988_800;
-const LOCAL_ADDR: &'static str = "0.0.0.0:12300";
+const LOCAL_ADDR: &str = "0.0.0.0:12300";
 
 #[derive(Default, Debug, Copy, Clone)]
 struct NTPTimestamp {
@@ -52,7 +51,7 @@ impl From<NTPTimestamp> for DateTime<Utc> {
         nanos *= 1e9;
         nanos /= 2_f64.powi(32);
 
-        Utc.timestamp(secs, nanos as u32)
+        Utc.timestamp_opt(secs, nanos as u32).unwrap()
     }
 }
 
@@ -129,8 +128,8 @@ fn ntp_roundtrip(host: &str, port: u16) -> Result<NTPResult, std::io::Error> {
 
     let message = request.data;
 
-    let udp = UdpSocket::bind(&LOCAL_ADDR)?;
-    udp.connect(&destination).expect("Unable to connect");
+    let udp = UdpSocket::bind(LOCAL_ADDR)?;
+    udp.connect(destination).expect("Unable to connect");
 
     let t1 = Utc::now();
 
@@ -162,7 +161,7 @@ pub fn check_time() -> Result<f64, std::io::Error> {
     for &server in servers.iter() {
         println!("{} => ", server);
 
-        let calc = ntp_roundtrip(&server, NTP_PORT);
+        let calc = ntp_roundtrip(server, NTP_PORT);
 
         match calc {
             Ok(time) => {
@@ -202,7 +201,7 @@ impl Clock {
     }
 
     #[cfg(windows)]
-    pub fn set<Tz: TimeZone>(t: DateTime<Tz>) -> () {
+    pub fn set<Tz: TimeZone>(t: DateTime<Tz>) {
         use chrono::Weekday;
         use kernel32::SetSystemTime;
         use winapi::{SYSTEMTIME, WORD};
@@ -245,7 +244,7 @@ impl Clock {
     }
 
     #[cfg(not(windows))]
-    pub fn set<Tz: TimeZone>(t: DateTime<Tz>) -> () {
+    pub fn set<Tz: TimeZone>(t: DateTime<Tz>) {
         use libc::{settimeofday, timezone};
         use libc::{suseconds_t, time_t, timeval};
 
