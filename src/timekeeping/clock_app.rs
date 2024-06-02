@@ -2,7 +2,7 @@ use crate::{check_time, Clock};
 use chrono::{DateTime, Duration as ChronoDuration, Utc};
 use clap::{App, Arg};
 
-pub fn run() {
+pub fn run_clock_app() {
     let app = App::new("clock")
         .version("0.1")
         .about("Get and set the time")

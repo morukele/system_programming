@@ -11,3 +11,5 @@ The repository contains:
 - a TCP server
 - a replica Key-Value store
 - a particle simulator
+- a client for communicating with NTP (Network Time Protocol) servers, and updating system time
+- an image generator using concurrent processing with crossbeam and rayon crates. 

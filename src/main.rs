@@ -1,5 +1,5 @@
-use system_programming::render_hex;
+use system_programming::{run_render_hex};
 
 fn main() {
-    render_hex::run()
+    run_render_hex()
 }
