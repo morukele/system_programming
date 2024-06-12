@@ -1,6 +1,6 @@
-use std::thread;
 use crossbeam::unbounded;
 use rayon::prelude::*;
+use std::thread;
 use svg::node::element::path::{Command, Data, Position};
 use svg::node::element::{Path, Rectangle};
 use svg::Document;
@@ -39,7 +39,7 @@ struct Artist {
     heading: Orientation,
 }
 
-enum Work{
+enum Work {
     Task((usize, u8)),
     Finished,
 }
@@ -127,23 +127,21 @@ pub fn parse(input: &str) -> Vec<Operation> {
         n_bytes += 1;
     }
 
-    for _ in 0..n_threads{
+    for _ in 0..n_threads {
         todo_tx.send(Work::Finished).unwrap();
     }
 
     for _ in 0..n_threads {
         let todo = todo_rx.clone();
         let results = results_tx.clone();
-        thread::spawn(move || {
-            loop {
-                let task = todo.recv();
-                let result = match task {
-                    Err(_) => break,
-                    Ok(Work::Finished) => break,
-                    Ok(Work::Task((i, byte))) => (i, parse_byte(byte))
-                };
-                results.send(result).unwrap();
-            }
+        thread::spawn(move || loop {
+            let task = todo.recv();
+            let result = match task {
+                Err(_) => break,
+                Ok(Work::Finished) => break,
+                Ok(Work::Task((i, byte))) => (i, parse_byte(byte)),
+            };
+            results.send(result).unwrap();
         });
     }
     let mut ops = vec![Operation::Nope(0); n_bytes];

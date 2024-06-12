@@ -1,5 +1,5 @@
-use std::thread;
 use crossbeam::{select, unbounded};
+use std::thread;
 
 pub fn run_single_channel() {
     let (tx, rx) = unbounded();
@@ -14,10 +14,10 @@ pub fn run_single_channel() {
 }
 
 #[derive(Debug)]
-enum ConnectivtyCheck{
+enum ConnectivtyCheck {
     Ping,
     Pong,
-    Pang
+    Pang,
 }
 pub fn run_two_way_channel() {
     let n_message = 3;
